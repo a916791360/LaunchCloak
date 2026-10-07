@@ -1,0 +1,10 @@
+# Build and binary artifacts
+LaunchCloak.app
+*.zip
+*.dmg
+*.o
+.DS_Store
+.build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
