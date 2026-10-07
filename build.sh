@@ -13,7 +13,12 @@ echo "==> 🚀 开始编译 $APP_NAME (Swift 6.x / macOS 26+)..."
 mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
 
-# 1. 编译二进制文件
+# 1. 复制 App 图标
+if [ -f "$DIR/AppIcon.icns" ]; then
+    cp "$DIR/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+fi
+
+# 2. 编译二进制文件
 swiftc -parse-as-library \
   -O \
   "$DIR/src/Models.swift" \
@@ -22,7 +27,7 @@ swiftc -parse-as-library \
   "$DIR/src/main.swift" \
   -o "$MACOS_DIR/$APP_NAME"
 
-# 2. 生成 Info.plist
+# 3. 生成 Info.plist
 cat << EOF > "$CONTENTS_DIR/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -35,13 +40,17 @@ cat << EOF > "$CONTENTS_DIR/Info.plist"
     <key>CFBundleName</key>
     <string>$APP_NAME</string>
     <key>CFBundleDisplayName</key>
-    <string>LaunchCloak (隐符)</string>
+    <string>LaunchCloak</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
@@ -52,7 +61,7 @@ cat << EOF > "$CONTENTS_DIR/Info.plist"
 </plist>
 EOF
 
-# 3. Ad-hoc 本地代码签名
+# 4. Ad-hoc 本地代码签名
 codesign --force --deep --sign - "$BUNDLE_DIR" >/dev/null 2>&1 || true
 
 echo "==> ✅ 打包完成！生成应用位于: $BUNDLE_DIR"
