@@ -18,9 +18,11 @@ if [ -f "$DIR/AppIcon.icns" ]; then
     cp "$DIR/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
 fi
 
-# 2. 编译二进制文件
+# 2. 编译 Universal 2 双架构二进制 (Apple Silicon arm64 + Intel x86_64)
+echo "==> ⚙️ 编译 Apple Silicon (arm64)..."
 swiftc -parse-as-library \
   -O \
+  -target arm64-apple-macosx14.0 \
   "$DIR/src/Models.swift" \
   "$DIR/src/SettingsManager.swift" \
   "$DIR/src/SettingsWindowController.swift" \
@@ -28,7 +30,24 @@ swiftc -parse-as-library \
   "$DIR/src/AppManager.swift" \
   "$DIR/src/Views.swift" \
   "$DIR/src/main.swift" \
-  -o "$MACOS_DIR/$APP_NAME"
+  -o "/tmp/${APP_NAME}_arm64"
+
+echo "==> ⚙️ 编译 Intel (x86_64)..."
+swiftc -parse-as-library \
+  -O \
+  -target x86_64-apple-macosx14.0 \
+  "$DIR/src/Models.swift" \
+  "$DIR/src/SettingsManager.swift" \
+  "$DIR/src/SettingsWindowController.swift" \
+  "$DIR/src/SettingsView.swift" \
+  "$DIR/src/AppManager.swift" \
+  "$DIR/src/Views.swift" \
+  "$DIR/src/main.swift" \
+  -o "/tmp/${APP_NAME}_x86_64"
+
+echo "==> 🔀 合并生成 Universal 2 通用二进制文件..."
+lipo -create "/tmp/${APP_NAME}_arm64" "/tmp/${APP_NAME}_x86_64" -output "$MACOS_DIR/$APP_NAME"
+rm -f "/tmp/${APP_NAME}_arm64" "/tmp/${APP_NAME}_x86_64"
 
 # 3. 生成 Info.plist
 cat << EOF > "$CONTENTS_DIR/Info.plist"
