@@ -3,7 +3,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 APP_NAME="LaunchCloak"
-VERSION="1.1.1"
+VERSION="1.1.2"
 DMG_NAME="${APP_NAME}-v${VERSION}-Installer.dmg"
 STAGING_DIR="/tmp/LaunchCloak_DMG_Staging"
 

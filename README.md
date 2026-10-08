@@ -74,8 +74,8 @@ brew upgrade launchcloak
 ### 方式二：直接下载预编译版本
 
 1. 进入 [GitHub Releases 页面](https://github.com/a916791360/LaunchCloak/releases)；
-2. 下载最新版本（如 `LaunchCloak-v1.1.1-macos.zip`）并解压；
-3. 将解压出的 `LaunchCloak.app` 拖入 `/Applications`（应用程序）文件夹；
+2. 下载最新版本（如 `LaunchCloak-v1.1.2-Installer.dmg` 或 `LaunchCloak-v1.1.2-macos.zip`）；
+3. 将 `LaunchCloak.app` 拖入 `/Applications`（应用程序）文件夹；
 4. 双击打开，图标常驻于屏幕右上角菜单栏（`eye.slash` 图标）。
 
 > 💡 **初次打开提示“未知开发者”或“已损坏”？**  
