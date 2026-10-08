@@ -12,8 +12,8 @@ public struct MainContentView: View {
     @ObservedObject var manager: AppManager
     @State private var selectedTab: AppTab = .installed
     @State private var searchText: String = ""
-    @State private var hoveredAppId: UUID? = nil
-    @State private var pendingActionAppId: UUID? = nil
+    @State private var hoveredAppId: String? = nil
+    @State private var pendingActionAppId: String? = nil
     
     public init(manager: AppManager) {
         self.manager = manager
@@ -58,7 +58,7 @@ public struct MainContentView: View {
     // MARK: - Header (Title & Action Menu)
     private var headerView: some View {
         HStack(spacing: 8) {
-            // 品牌图标与标题（去掉了“隐符”，单行不折行）
+            // 品牌图标与标题
             HStack(spacing: 8) {
                 Image(systemName: "eye.slash.fill")
                     .font(.system(size: 15, weight: .semibold))
@@ -81,7 +81,7 @@ public struct MainContentView: View {
                 }
                 
                 Button {
-                    manager.refresh()
+                    manager.refresh(showLoading: true)
                 } label: {
                     Label("刷新应用列表", systemImage: "arrow.clockwise")
                 }
@@ -225,6 +225,7 @@ public struct MainContentView: View {
                 LazyVStack(spacing: 2) {
                     ForEach(filteredApps) { item in
                         appRow(item: item)
+                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     }
                 }
                 .padding(.vertical, 6)
@@ -330,7 +331,6 @@ public struct MainContentView: View {
         pendingActionAppId = item.id
         Task {
             manager.hideApp(item)
-            try? await Task.sleep(nanoseconds: 200_000_000)
             pendingActionAppId = nil
         }
     }
@@ -339,7 +339,6 @@ public struct MainContentView: View {
         pendingActionAppId = item.id
         Task {
             manager.restoreApp(item)
-            try? await Task.sleep(nanoseconds: 200_000_000)
             pendingActionAppId = nil
         }
     }

@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Combine
+import SwiftUI
 
 @MainActor
 public final class AppManager: ObservableObject {
@@ -20,7 +21,7 @@ public final class AppManager: ObservableObject {
         
         setupHiddenDirectory()
         loadMetadata()
-        refresh()
+        refresh(showLoading: true)
     }
     
     /// 初始化隐藏隔离目录
@@ -48,9 +49,11 @@ public final class AppManager: ObservableObject {
         try? data.write(to: metadataURL)
     }
     
-    /// 刷新已安装和已隐藏应用列表
-    public func refresh() {
-        self.isLoading = true
+    /// 刷新已安装和已隐藏应用列表（仅在初次加载或手动请求刷新时触发）
+    public func refresh(showLoading: Bool = true) {
+        if showLoading {
+            self.isLoading = true
+        }
         self.errorMessage = nil
         
         let hiddenDir = self.hiddenFolderURL
@@ -94,7 +97,7 @@ public final class AppManager: ObservableObject {
         }
     }
     
-    /// 隐藏指定应用
+    /// 隐藏指定应用：原地原地顺滑移除，不重置滚动位置
     public func hideApp(_ item: AppItem) {
         let fm = FileManager.default
         let fileName = item.url.lastPathComponent
@@ -110,29 +113,39 @@ public final class AppManager: ObservableObject {
         self.records[fileName] = record
         self.saveMetadata()
         
-        // 执行文件移动
+        var moveSucceeded = false
+        
         do {
             if fm.fileExists(atPath: targetURL.path) {
                 try fm.removeItem(at: targetURL)
             }
             try fm.moveItem(at: item.url, to: targetURL)
-            notifySystemChange(at: targetURL, original: item.url)
-            refresh()
+            moveSucceeded = true
         } catch {
-            // 若遇权限受限，尝试以管理员提权移动
             let success = moveWithPrivileges(from: item.url.path, to: targetURL.path)
             if success {
-                notifySystemChange(at: targetURL, original: item.url)
-                refresh()
+                moveSucceeded = true
             } else {
                 self.errorMessage = "隐藏失败：无法移动 \(item.name)，可能受 macOS 权限或系统保护限制。"
                 self.records.removeValue(forKey: fileName)
                 self.saveMetadata()
             }
         }
+        
+        if moveSucceeded {
+            notifySystemChange(at: targetURL, original: item.url)
+            
+            // 原地动画移除当前行，滚动位置纹丝不动
+            withAnimation(.snappy(duration: 0.25)) {
+                self.installedApps.removeAll { $0.id == item.id }
+                let hiddenItem = AppItem(url: targetURL, isHidden: true)
+                self.hiddenApps.append(hiddenItem)
+                self.hiddenApps.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            }
+        }
     }
     
-    /// 恢复指定应用
+    /// 恢复指定应用：原地顺滑移除，不重置滚动位置
     public func restoreApp(_ item: AppItem) {
         let fm = FileManager.default
         let fileName = item.url.lastPathComponent
@@ -140,24 +153,34 @@ public final class AppManager: ObservableObject {
         let destinationPath = self.records[fileName]?.originalPath ?? "/Applications/\(fileName)"
         let targetURL = URL(fileURLWithPath: destinationPath)
         
+        var moveSucceeded = false
+        
         do {
             if fm.fileExists(atPath: targetURL.path) {
                 try fm.removeItem(at: targetURL)
             }
             try fm.moveItem(at: item.url, to: targetURL)
-            self.records.removeValue(forKey: fileName)
-            self.saveMetadata()
-            notifySystemChange(at: targetURL, original: item.url)
-            refresh()
+            moveSucceeded = true
         } catch {
             let success = moveWithPrivileges(from: item.url.path, to: targetURL.path)
             if success {
-                self.records.removeValue(forKey: fileName)
-                self.saveMetadata()
-                notifySystemChange(at: targetURL, original: item.url)
-                refresh()
+                moveSucceeded = true
             } else {
                 self.errorMessage = "恢复失败：无法还原 \(item.name) 到原路径。"
+            }
+        }
+        
+        if moveSucceeded {
+            self.records.removeValue(forKey: fileName)
+            self.saveMetadata()
+            notifySystemChange(at: targetURL, original: item.url)
+            
+            // 原地动画从隐藏列表移出，平滑放入已安装列表
+            withAnimation(.snappy(duration: 0.25)) {
+                self.hiddenApps.removeAll { $0.id == item.id }
+                let restoredItem = AppItem(url: targetURL, isHidden: false)
+                self.installedApps.append(restoredItem)
+                self.installedApps.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             }
         }
     }
@@ -187,7 +210,6 @@ public final class AppManager: ObservableObject {
     
     /// 通知系统文件变化
     private func notifySystemChange(at target: URL, original: URL) {
-        // 使用 touch 与 mdimport 刷新 Spotlight / Launchpad 缓存
         Process.launchedProcess(launchPath: "/usr/bin/touch", arguments: [target.path])
         Process.launchedProcess(launchPath: "/usr/bin/touch", arguments: [original.deletingLastPathComponent().path])
     }

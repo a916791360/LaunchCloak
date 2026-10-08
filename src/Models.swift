@@ -3,7 +3,7 @@ import Foundation
 
 /// 代表一个应用程序项
 public struct AppItem: Identifiable, Equatable {
-    public let id: UUID
+    public let id: String
     public let name: String
     public let bundleIdentifier: String
     public let url: URL
@@ -12,8 +12,8 @@ public struct AppItem: Identifiable, Equatable {
     public var isHidden: Bool
     
     public init(url: URL, isHidden: Bool = false) {
-        self.id = UUID()
         self.url = url
+        self.id = url.path
         self.isHidden = isHidden
         
         let bundle = Bundle(url: url)
@@ -29,7 +29,7 @@ public struct AppItem: Identifiable, Equatable {
     }
     
     public static func == (lhs: AppItem, rhs: AppItem) -> Bool {
-        lhs.url.path == rhs.url.path
+        lhs.id == rhs.id
     }
 }
 
