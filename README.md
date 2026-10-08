@@ -46,6 +46,8 @@
 
 - 🪶 **状态栏轻驻 (LSUIElement)**：无 Dock 栏图标占用，常驻于屏幕右上角，点击即用。
 - 🫧 **macOS 原生 Soft 质感**：基于 SwiftUI 构建的毛玻璃透光材质、连续平滑圆角与触感微动效。
+- 🔒 **Touch ID / 锁屏密码隐私锁**：进入“已隐藏”应用标签需验证身份（支持指纹与系统登录密码），可在偏好设置自由开关与手动锁定。
+- 🚀 **开机自启动支持**：采用 macOS 13+ 原生 `SMAppService`，偏好设置内置一键开关。
 - 🔍 **全宽等分分段器**：“全部应用”与“已隐藏应用”横向舒展切换，支持中文拼音/英文实时模糊搜索。
 - 🛡️ **智能保护与提权**：自动识别并标记系统核心受保护组件；遇到权限目录自动唤起原生系统授权。
 - 📦 **一键全部恢复**：右上角“···”菜单提供一键全部恢复，随时一键复原所有启动台应用。
@@ -54,10 +56,23 @@
 
 ## 📥 下载与安装 (Download & Install)
 
-### 方式一：直接下载预编译版本（推荐）
+### 方式一：Homebrew 一键安装（推荐）
+
+只需一行命令即可添加 Tap 源并自动安装或更新：
+
+```bash
+brew install a916791360/tap/launchcloak
+```
+
+后续升级直接运行：
+```bash
+brew upgrade launchcloak
+```
+
+### 方式二：直接下载预编译版本
 
 1. 进入 [GitHub Releases 页面](https://github.com/a916791360/LaunchCloak/releases)；
-2. 下载最新版本（如 `LaunchCloak-v1.0.3-macos.zip`）并解压；
+2. 下载最新版本（如 `LaunchCloak-v1.1.0-macos.zip`）并解压；
 3. 将解压出的 `LaunchCloak.app` 拖入 `/Applications`（应用程序）文件夹；
 4. 双击打开，图标常驻于屏幕右上角菜单栏（`eye.slash` 图标）。
 
@@ -100,10 +115,12 @@ LaunchCloak/
 ├── build.sh            # 自动化编译打包与签名脚本
 ├── AppIcon.icns        # 全尺寸 macOS 原生图标包
 └── src/
-    ├── Models.swift     # 核心数据模型 (AppItem, HiddenAppRecord)
-    ├── AppManager.swift # 目录扫描、隔离隐藏与原路恢复引擎
-    ├── Views.swift      # SwiftUI Soft 质感界面 (状态栏浮窗、分段器、搜索与卡片)
-    └── main.swift       # 应用程序主入口 (MenuBarExtra)
+    ├── Models.swift          # 核心数据模型 (AppItem, HiddenAppRecord)
+    ├── SettingsManager.swift # 偏好设置、TouchID/系统认证与自启动管理
+    ├── SettingsView.swift    # 偏好设置独立面板 (SwiftUI Sheet)
+    ├── AppManager.swift      # 目录扫描、隔离隐藏与原路恢复引擎
+    ├── Views.swift           # SwiftUI Soft 质感界面 (状态栏浮窗、分段器、搜索与卡片)
+    └── main.swift            # 应用程序主入口 (MenuBarExtra)
 ```
 
 ---

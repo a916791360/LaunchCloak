@@ -10,10 +10,12 @@ public enum AppTab: String, CaseIterable, Identifiable {
 
 public struct MainContentView: View {
     @ObservedObject var manager: AppManager
+    @StateObject private var settings = SettingsManager()
     @State private var selectedTab: AppTab = .installed
     @State private var searchText: String = ""
     @State private var hoveredAppId: String? = nil
     @State private var pendingActionAppId: String? = nil
+    @State private var isShowingSettings: Bool = false
     
     public init(manager: AppManager) {
         self.manager = manager
@@ -53,6 +55,9 @@ public struct MainContentView: View {
         }
         .frame(width: 380, height: 500)
         .background(.regularMaterial)
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView(settings: settings, manager: manager)
+        }
     }
     
     // MARK: - Header (Title & Action Menu)
@@ -74,6 +79,25 @@ public struct MainContentView: View {
             
             // 右上角 "···" 更多菜单
             Menu {
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Label("偏好设置...", systemImage: "gearshape")
+                }
+                
+                if settings.requireAuthForHiddenTab && settings.isHiddenTabUnlocked {
+                    Button {
+                        settings.lockHiddenTab()
+                        withAnimation(.snappy(duration: 0.2)) {
+                            selectedTab = .installed
+                        }
+                    } label: {
+                        Label("锁定“已隐藏”标签", systemImage: "lock.fill")
+                    }
+                }
+                
+                Divider()
+                
                 Button {
                     manager.openHiddenFolder()
                 } label: {
@@ -127,11 +151,16 @@ public struct MainContentView: View {
     
     private func tabButton(title: String, count: Int, tab: AppTab) -> some View {
         Button {
-            withAnimation(.snappy(duration: 0.2)) {
-                selectedTab = tab
-            }
+            handleTabSwitch(to: tab)
         } label: {
             HStack(spacing: 6) {
+                // 如果开启了密码保护，在已隐藏标签旁显示锁状态图标
+                if tab == .hidden && settings.requireAuthForHiddenTab {
+                    Image(systemName: settings.isHiddenTabUnlocked ? "lock.open.fill" : "lock.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(settings.isHiddenTabUnlocked ? Color.accentColor : Color.secondary)
+                }
+                
                 Text(title)
                     .font(.system(size: 12, weight: selectedTab == tab ? .semibold : .medium))
                     .lineLimit(1)
@@ -160,6 +189,23 @@ public struct MainContentView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+    
+    private func handleTabSwitch(to tab: AppTab) {
+        if tab == .hidden && settings.requireAuthForHiddenTab && !settings.isHiddenTabUnlocked {
+            Task {
+                let success = await settings.authenticate(reason: "请验证以访问已隐藏的应用列表")
+                if success {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        selectedTab = .hidden
+                    }
+                }
+            }
+        } else {
+            withAnimation(.snappy(duration: 0.2)) {
+                selectedTab = tab
+            }
+        }
     }
     
     // MARK: - Search Bar

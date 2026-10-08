@@ -22,6 +22,8 @@ fi
 swiftc -parse-as-library \
   -O \
   "$DIR/src/Models.swift" \
+  "$DIR/src/SettingsManager.swift" \
+  "$DIR/src/SettingsView.swift" \
   "$DIR/src/AppManager.swift" \
   "$DIR/src/Views.swift" \
   "$DIR/src/main.swift" \
@@ -48,9 +50,9 @@ cat << EOF > "$CONTENTS_DIR/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.5</string>
+    <string>1.1.0</string>
     <key>CFBundleVersion</key>
-    <string>6</string>
+    <string>7</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
