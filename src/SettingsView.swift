@@ -4,12 +4,12 @@ import AppKit
 public struct SettingsView: View {
     @ObservedObject var settings: SettingsManager
     @ObservedObject var manager: AppManager
-    @Environment(\.dismiss) private var dismiss
-    @State private var showingAuthError: Bool = false
+    var onClose: (() -> Void)? = nil
     
-    public init(settings: SettingsManager, manager: AppManager) {
+    public init(settings: SettingsManager, manager: AppManager, onClose: (() -> Void)? = nil) {
         self.settings = settings
         self.manager = manager
+        self.onClose = onClose
     }
     
     public var body: some View {
@@ -17,21 +17,20 @@ public struct SettingsView: View {
             // 顶部导航栏
             HStack {
                 Text("偏好设置")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                 
                 Spacer()
                 
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.tertiary)
+                if let onClose = onClose {
+                    Button("完成") {
+                        onClose()
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 14)
+            .padding(.horizontal, 18)
+            .padding(.top, 16)
             .padding(.bottom, 12)
             
             Divider()
@@ -61,6 +60,7 @@ public struct SettingsView: View {
                                     }
                                 ))
                                 .toggleStyle(.switch)
+                                .tint(.blue)
                                 .labelsHidden()
                             }
                         }
@@ -87,11 +87,12 @@ public struct SettingsView: View {
                                     }
                                 ))
                                 .toggleStyle(.switch)
+                                .tint(.blue)
                                 .labelsHidden()
                             }
                             
                             if settings.requireAuthForHiddenTab {
-                                HStack {
+                                HStack(spacing: 6) {
                                     Image(systemName: "checkmark.shield.fill")
                                         .font(.system(size: 12))
                                         .foregroundStyle(.green)
@@ -141,11 +142,11 @@ public struct SettingsView: View {
                     }
                     .padding(.top, 8)
                 }
-                .padding(16)
+                .padding(18)
             }
         }
-        .frame(width: 380, height: 420)
-        .background(.regularMaterial)
+        .frame(width: 400, height: 420)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
     
     private func settingSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -170,15 +171,10 @@ public struct SettingsView: View {
     
     private func handleAuthToggle(_ newValue: Bool) {
         if newValue {
-            // 开启时，立即要求验证一次作为确认
-            Task {
-                let success = await settings.authenticate(reason: "请验证以启用已隐藏应用的访问密码保护")
-                if success {
-                    settings.requireAuthForHiddenTab = true
-                }
-            }
+            // 开启密码保护：直接开启，即时生效
+            settings.requireAuthForHiddenTab = true
         } else {
-            // 关闭时，必须验证当前机主身份，防止他人偷偷关闭
+            // 关闭密码保护：必须验证机主身份，防范未经授权关闭
             Task {
                 let success = await settings.authenticate(reason: "关闭密码保护需验证机主身份")
                 if success {

@@ -15,7 +15,6 @@ public struct MainContentView: View {
     @State private var searchText: String = ""
     @State private var hoveredAppId: String? = nil
     @State private var pendingActionAppId: String? = nil
-    @State private var isShowingSettings: Bool = false
     
     public init(manager: AppManager) {
         self.manager = manager
@@ -55,9 +54,6 @@ public struct MainContentView: View {
         }
         .frame(width: 380, height: 500)
         .background(.regularMaterial)
-        .sheet(isPresented: $isShowingSettings) {
-            SettingsView(settings: settings, manager: manager)
-        }
     }
     
     // MARK: - Header (Title & Action Menu)
@@ -80,10 +76,11 @@ public struct MainContentView: View {
             // 右上角 "···" 更多菜单
             Menu {
                 Button {
-                    isShowingSettings = true
+                    SettingsWindowController.shared.show(settings: settings, manager: manager)
                 } label: {
                     Label("偏好设置...", systemImage: "gearshape")
                 }
+                .keyboardShortcut(",", modifiers: .command)
                 
                 if settings.requireAuthForHiddenTab && settings.isHiddenTabUnlocked {
                     Button {

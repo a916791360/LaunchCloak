@@ -115,12 +115,13 @@ LaunchCloak/
 ├── build.sh            # 自动化编译打包与签名脚本
 ├── AppIcon.icns        # 全尺寸 macOS 原生图标包
 └── src/
-    ├── Models.swift          # 核心数据模型 (AppItem, HiddenAppRecord)
-    ├── SettingsManager.swift # 偏好设置、TouchID/系统认证与自启动管理
-    ├── SettingsView.swift    # 偏好设置独立面板 (SwiftUI Sheet)
-    ├── AppManager.swift      # 目录扫描、隔离隐藏与原路恢复引擎
-    ├── Views.swift           # SwiftUI Soft 质感界面 (状态栏浮窗、分段器、搜索与卡片)
-    └── main.swift            # 应用程序主入口 (MenuBarExtra)
+    ├── Models.swift                   # 核心数据模型 (AppItem, HiddenAppRecord)
+    ├── SettingsManager.swift          # 偏好设置、TouchID/系统认证与自启动管理
+    ├── SettingsWindowController.swift # 独立偏好设置原生窗口管理器 (NSWindow)
+    ├── SettingsView.swift             # 偏好设置界面 (SwiftUI)
+    ├── AppManager.swift               # 目录扫描、隔离隐藏与原路恢复引擎
+    ├── Views.swift                    # SwiftUI Soft 质感界面 (状态栏浮窗、分段器、搜索与卡片)
+    └── main.swift                     # 应用程序主入口 (MenuBarExtra)
 ```
 
 ---
