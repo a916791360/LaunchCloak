@@ -185,10 +185,72 @@ public final class AppManager: ObservableObject {
         }
     }
     
-    /// 恢复所有已隐藏应用
+    /// 恢复所有已隐藏应用（智能合并提权，最多只弹一次系统密码授权）
     public func restoreAll() {
-        for app in hiddenApps {
-            restoreApp(app)
+        let fm = FileManager.default
+        var remainingPrivilegedMoves: [(item: AppItem, source: String, dest: String, fileName: String)] = []
+        var successfullyRestored: [(item: AppItem, targetURL: URL, fileName: String)] = []
+        
+        let appsToRestore = self.hiddenApps
+        
+        // 1. 第一阶段：先尝试常规无特权静默移动（普通第三方应用在此完成，0 弹窗）
+        for item in appsToRestore {
+            let fileName = item.url.lastPathComponent
+            let destinationPath = self.records[fileName]?.originalPath ?? "/Applications/\(fileName)"
+            let targetURL = URL(fileURLWithPath: destinationPath)
+            
+            do {
+                if fm.fileExists(atPath: targetURL.path) {
+                    try fm.removeItem(at: targetURL)
+                }
+                try fm.moveItem(at: item.url, to: targetURL)
+                successfullyRestored.append((item, targetURL, fileName))
+            } catch {
+                // 需要 root 权限的系统应用收集起来集中处理
+                remainingPrivilegedMoves.append((item, item.url.path, destinationPath, fileName))
+            }
+        }
+        
+        // 2. 第二阶段：如果存在需要管理员权限的系统应用，打包合并为单次提权批处理脚本（只弹一次密码）
+        if !remainingPrivilegedMoves.isEmpty {
+            var shellCommands: [String] = []
+            for move in remainingPrivilegedMoves {
+                let escapedSource = move.source.replacingOccurrences(of: "\"", with: "\\\"")
+                let escapedDest = move.dest.replacingOccurrences(of: "\"", with: "\\\"")
+                shellCommands.append("rm -rf \\\"\(escapedDest)\\\" 2>/dev/null; mv \\\"\(escapedSource)\\\" \\\"\(escapedDest)\\\"")
+            }
+            
+            let combinedCommand = shellCommands.joined(separator: "; ")
+            let appleScriptSource = "do shell script \"\(combinedCommand)\" with administrator privileges"
+            
+            var error: NSDictionary?
+            if let appleScript = NSAppleScript(source: appleScriptSource) {
+                appleScript.executeAndReturnError(&error)
+                if error == nil {
+                    // 全部批量恢复成功
+                    for move in remainingPrivilegedMoves {
+                        successfullyRestored.append((move.item, URL(fileURLWithPath: move.dest), move.fileName))
+                    }
+                } else {
+                    self.errorMessage = "批量恢复部分系统应用受阻：用户取消了授权或权限不足。"
+                }
+            }
+        }
+        
+        // 3. 第三阶段：清理元数据、更新列表与刷新视图
+        for restored in successfullyRestored {
+            self.records.removeValue(forKey: restored.fileName)
+            notifySystemChange(at: restored.targetURL, original: restored.item.url)
+        }
+        self.saveMetadata()
+        
+        withAnimation(.snappy(duration: 0.25)) {
+            for restored in successfullyRestored {
+                self.hiddenApps.removeAll { $0.id == restored.item.id }
+                let restoredItem = AppItem(url: restored.targetURL, isHidden: false)
+                self.installedApps.append(restoredItem)
+            }
+            self.installedApps.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         }
     }
     
