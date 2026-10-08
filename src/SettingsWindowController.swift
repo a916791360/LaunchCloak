@@ -28,7 +28,7 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
             defer: false
         )
         newWindow.title = "偏好设置"
-        newWindow.titleVisibility = .visible
+        newWindow.titleVisibility = .hidden
         newWindow.titlebarAppearsTransparent = true
         newWindow.isReleasedWhenClosed = false
         newWindow.isMovableByWindowBackground = true

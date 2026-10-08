@@ -131,16 +131,15 @@ public struct SettingsView: View {
                     }
                     
                     // 4. 关于 LaunchCloak
-                    VStack(spacing: 4) {
-                        Text("LaunchCloak v1.1.0")
+                    VStack(spacing: 3) {
+                        Text("LaunchCloak v1.1.1")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                        
-                        Link("GitHub 仓库与反馈", destination: URL(string: "https://github.com/a916791360/LaunchCloak")!)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(.tertiary)
+                        Text("轻量级启动台图标隐藏与隐私管理工具")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.quaternary)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 10)
                 }
                 .padding(18)
             }
