@@ -70,9 +70,9 @@ cat << EOF > "$CONTENTS_DIR/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.2</string>
+    <string>1.1.3</string>
     <key>CFBundleVersion</key>
-    <string>9</string>
+    <string>10</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>

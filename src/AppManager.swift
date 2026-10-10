@@ -134,6 +134,13 @@ public final class AppManager: ObservableObject {
         
         if moveSucceeded {
             notifySystemChange(at: targetURL, original: item.url)
+            syncLaunchpad(
+                unregisteredPath: item.url.path,
+                bundleId: item.bundleIdentifier,
+                title: item.name,
+                fileNameWithoutExt: item.url.deletingPathExtension().lastPathComponent,
+                shouldRestartDock: true
+            )
             
             // 原地动画移除当前行，滚动位置纹丝不动
             withAnimation(.snappy(duration: 0.25)) {
@@ -174,6 +181,10 @@ public final class AppManager: ObservableObject {
             self.records.removeValue(forKey: fileName)
             self.saveMetadata()
             notifySystemChange(at: targetURL, original: item.url)
+            syncLaunchpad(
+                registeredPath: targetURL.path,
+                shouldRestartDock: true
+            )
             
             // 原地动画从隐藏列表移出，平滑放入已安装列表
             withAnimation(.snappy(duration: 0.25)) {
@@ -241,8 +252,17 @@ public final class AppManager: ObservableObject {
         for restored in successfullyRestored {
             self.records.removeValue(forKey: restored.fileName)
             notifySystemChange(at: restored.targetURL, original: restored.item.url)
+            syncLaunchpad(registeredPath: restored.targetURL.path, shouldRestartDock: false)
         }
         self.saveMetadata()
+        
+        // 批量恢复完成后，统一重启一次 Dock 刷新 Launchpad
+        if !successfullyRestored.isEmpty {
+            let killDock = Process()
+            killDock.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killDock.arguments = ["Dock"]
+            try? killDock.run()
+        }
         
         withAnimation(.snappy(duration: 0.25)) {
             for restored in successfullyRestored {
@@ -274,5 +294,78 @@ public final class AppManager: ObservableObject {
     private func notifySystemChange(at target: URL, original: URL) {
         Process.launchedProcess(launchPath: "/usr/bin/touch", arguments: [target.path])
         Process.launchedProcess(launchPath: "/usr/bin/touch", arguments: [original.deletingLastPathComponent().path])
+    }
+    
+    /// 强力同步 Launchpad 启动台与 Dock 状态，确保隐藏/恢复即刻反映在启动台上
+    private func syncLaunchpad(
+        unregisteredPath: String? = nil,
+        registeredPath: String? = nil,
+        bundleId: String? = nil,
+        title: String? = nil,
+        fileNameWithoutExt: String? = nil,
+        shouldRestartDock: Bool = true
+    ) {
+        // 1. LaunchServices 注销或重新注册
+        if let unreg = unregisteredPath {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister")
+            p.arguments = ["-u", unreg]
+            try? p.run()
+            p.waitUntilExit()
+        }
+        
+        if let reg = registeredPath {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister")
+            p.arguments = ["-f", reg]
+            try? p.run()
+            p.waitUntilExit()
+        }
+        
+        // 2. 如果存在 Launchpad 数据库（macOS 15 及更早系统），直接从 SQLite 中清除记录，避免残留幽灵图标
+        if bundleId != nil || title != nil || fileNameWithoutExt != nil {
+            deleteAppFromLaunchpadDB(bundleId: bundleId, title: title, fileNameWithoutExt: fileNameWithoutExt)
+        }
+        
+        // 3. 重启 Dock（Dock 负责绘制 Launchpad，重启仅耗时约 0.1 秒，立即重绘并移除图标）
+        if shouldRestartDock {
+            let killDock = Process()
+            killDock.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killDock.arguments = ["Dock"]
+            try? killDock.run()
+        }
+    }
+    
+    /// 从 Launchpad SQLite 数据库中精准剔除应用记录
+    private func deleteAppFromLaunchpadDB(bundleId: String?, title: String?, fileNameWithoutExt: String?) {
+        var conditions: [String] = []
+        if let bid = bundleId, !bid.isEmpty {
+            let escapedBid = bid.replacingOccurrences(of: "'", with: "''")
+            conditions.append("bundleid='\(escapedBid)'")
+        }
+        if let t = title, !t.isEmpty {
+            let escapedT = t.replacingOccurrences(of: "'", with: "''")
+            conditions.append("title='\(escapedT)'")
+        }
+        if let fn = fileNameWithoutExt, !fn.isEmpty {
+            let escapedFn = fn.replacingOccurrences(of: "'", with: "''")
+            conditions.append("title='\(escapedFn)'")
+        }
+        
+        guard !conditions.isEmpty else { return }
+        let whereClause = conditions.joined(separator: " OR ")
+        
+        let script = """
+        LP_DIR=$(find /private/var/folders -name com.apple.dock.launchpad -user $(id -u) 2>/dev/null | head -n 1)
+        if [ -n "$LP_DIR" ] && [ -f "$LP_DIR/db/db" ]; then
+            sqlite3 "$LP_DIR/db/db" "DELETE FROM apps WHERE \(whereClause);" 2>/dev/null
+            sqlite3 "$LP_DIR/db/db" "DELETE FROM items WHERE rowid NOT IN (SELECT item_id FROM apps UNION SELECT item_id FROM groups) AND type = 4;" 2>/dev/null
+        fi
+        """
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/bash")
+        p.arguments = ["-c", script]
+        try? p.run()
+        p.waitUntilExit()
     }
 }

@@ -132,7 +132,7 @@ public struct SettingsView: View {
                     
                     // 4. 关于 LaunchCloak
                     VStack(spacing: 3) {
-                        Text("LaunchCloak v1.1.2")
+                        Text("LaunchCloak v1.1.3")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.tertiary)
                         Text("轻量级启动台图标隐藏与隐私管理工具")
