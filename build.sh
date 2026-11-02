@@ -27,6 +27,7 @@ swiftc -parse-as-library \
   "$DIR/src/SettingsManager.swift" \
   "$DIR/src/SettingsWindowController.swift" \
   "$DIR/src/SettingsView.swift" \
+  "$DIR/src/UpdateChecker.swift" \
   "$DIR/src/AppManager.swift" \
   "$DIR/src/Views.swift" \
   "$DIR/src/main.swift" \
@@ -40,6 +41,7 @@ swiftc -parse-as-library \
   "$DIR/src/SettingsManager.swift" \
   "$DIR/src/SettingsWindowController.swift" \
   "$DIR/src/SettingsView.swift" \
+  "$DIR/src/UpdateChecker.swift" \
   "$DIR/src/AppManager.swift" \
   "$DIR/src/Views.swift" \
   "$DIR/src/main.swift" \

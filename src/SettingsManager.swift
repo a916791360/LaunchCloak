@@ -7,6 +7,7 @@ import SwiftUI
 @MainActor
 public final class SettingsManager: ObservableObject {
     @AppStorage("requireAuthForHiddenTab") public var requireAuthForHiddenTab: Bool = false
+    @AppStorage("autoCheckUpdates") public var autoCheckUpdates: Bool = true
     @Published public var isHiddenTabUnlocked: Bool = false
     @Published public var isLaunchAtLoginEnabled: Bool = false
     @Published public var authErrorMessage: String? = nil

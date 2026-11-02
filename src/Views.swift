@@ -111,6 +111,12 @@ public struct MainContentView: View {
                 }
                 .keyboardShortcut(",", modifiers: .command)
                 
+                Button {
+                    UpdateChecker.shared.checkForUpdates(explicit: true)
+                } label: {
+                    Label("检查更新...", systemImage: "arrow.triangle.2.circlepath")
+                }
+                
                 if settings.requireAuthForHiddenTab && settings.isHiddenTabUnlocked {
                     Button {
                         settings.lockHiddenTab()

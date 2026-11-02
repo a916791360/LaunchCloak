@@ -4,6 +4,7 @@ import AppKit
 public struct SettingsView: View {
     @ObservedObject var settings: SettingsManager
     @ObservedObject var manager: AppManager
+    @ObservedObject private var updateChecker = UpdateChecker.shared
     var onClose: (() -> Void)? = nil
     
     public init(settings: SettingsManager, manager: AppManager, onClose: (() -> Void)? = nil) {
@@ -39,9 +40,9 @@ public struct SettingsView: View {
             // 设置项列表
             ScrollView {
                 VStack(spacing: 16) {
-                    // 1. 通用设置：开机自启动
+                    // 1. 通用设置：开机自启动与更新检测
                     settingSection(title: "通用") {
-                        VStack(spacing: 10) {
+                        VStack(spacing: 12) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("开机时自动启动")
@@ -62,6 +63,25 @@ public struct SettingsView: View {
                                 .toggleStyle(.switch)
                                 .tint(.blue)
                                 .labelsHidden()
+                            }
+                            
+                            Divider().opacity(0.3)
+                            
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("启动时自动检查更新")
+                                        .font(.system(size: 13, weight: .medium))
+                                    Text("启动时检测 GitHub 最新版本，若有新版弹窗提醒")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: $settings.autoCheckUpdates)
+                                    .toggleStyle(.switch)
+                                    .tint(.blue)
+                                    .labelsHidden()
                             }
                         }
                     }
@@ -131,11 +151,40 @@ public struct SettingsView: View {
                     }
                     
                     // 4. 关于 LaunchCloak
-                    VStack(spacing: 3) {
-                        Text("LaunchCloak v1.1.3")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.tertiary)
-                        Text("轻量级启动台图标隐藏与隐私管理工具")
+                    VStack(spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text("LaunchCloak v\(updateChecker.currentVersion)")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                            
+                            Button {
+                                updateChecker.checkForUpdates(explicit: true)
+                            } label: {
+                                if updateChecker.isChecking {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                        .frame(width: 14, height: 14)
+                                } else {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                            .font(.system(size: 9))
+                                        Text("检查更新")
+                                            .font(.system(size: 10, weight: .medium))
+                                    }
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.mini)
+                            .disabled(updateChecker.isChecking)
+                        }
+                        
+                        if let status = updateChecker.statusMessage {
+                            Text(status)
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                        }
+                        
+                        Text("轻量级启动台图标隐藏与隐私管理工具 · 开源免费")
                             .font(.system(size: 10))
                             .foregroundStyle(.quaternary)
                     }
@@ -144,7 +193,7 @@ public struct SettingsView: View {
                 .padding(18)
             }
         }
-        .frame(width: 400, height: 420)
+        .frame(width: 400, height: 460)
         .background(Color(nsColor: .windowBackgroundColor))
     }
     
