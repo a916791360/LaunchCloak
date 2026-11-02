@@ -30,6 +30,7 @@ public final class UpdateChecker: ObservableObject {
     
     private let repoOwner = "a916791360"
     private let repoName = "LaunchCloak"
+    private let lastCheckKey = "lastUpdateCheckTimestamp"
     
     private init() {}
     
@@ -43,6 +44,16 @@ public final class UpdateChecker: ObservableObject {
     public func checkForUpdates(explicit: Bool = false) {
         guard !isChecking else { return }
         
+        // 如果是后台静默检查，增加 24 小时频次冷却保护，确保绝不频繁请求网络
+        if !explicit {
+            let lastCheck = UserDefaults.standard.double(forKey: lastCheckKey)
+            let now = Date().timeIntervalSince1970
+            // 24 小时 (86400 秒) 内已检查过则直接跳过，零网络与资源消耗
+            if lastCheck > 0 && (now - lastCheck) < 86400 {
+                return
+            }
+        }
+        
         isChecking = true
         statusMessage = "正在检查更新..."
         
@@ -50,6 +61,7 @@ public final class UpdateChecker: ObservableObject {
             defer {
                 self.isChecking = false
                 self.lastCheckTime = Date()
+                UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: self.lastCheckKey)
             }
             
             guard let url = URL(string: "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest") else {
