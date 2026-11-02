@@ -51,6 +51,8 @@
 - 🚀 **开机自启动支持**：采用 macOS 13+ 原生 `SMAppService`，偏好设置面板内置原生高亮开关，稳定省电。
 - 🌐 **本地化应用名智能解析**：优先识别 macOS 多语言 `.lproj` 资源包，精准呈现中文真实名称（如“访达”、“系统设置”），并支持中英双语与拼音实时模糊搜索。
 - 📌 **原地平滑动画与位置记忆**：隐藏或还原应用时就地刷新，保留当前浏览位置，告别列表跳顶带来的割裂感。
+- 🔄 **标题栏一键刷新 (⌘R)**：右上角常驻专属刷新胶囊，安装新应用即刻识别，支持 `/Applications/Utilities` 等子目录。
+- 🔔 **原生 GitHub 检查更新 (方案 A)**：内置纯原生更新检查器，支持开机静默自检与偏好设置手动检测，发现新版一键直达下载，0 第三方依赖。
 - 🛡️ **智能保护与提权**：自动识别并标记系统核心受保护组件；遇到权限目录自动唤起原生系统授权。
 - 📦 **一键全部恢复**：右上角“···”菜单提供一键全部恢复，随时一键复原所有启动台应用。
 
@@ -121,6 +123,7 @@ LaunchCloak/
     ├── SettingsManager.swift          # 偏好设置、TouchID/系统认证与自启动管理
     ├── SettingsWindowController.swift # 独立偏好设置原生窗口管理器 (NSWindow)
     ├── SettingsView.swift             # 偏好设置界面 (SwiftUI)
+    ├── UpdateChecker.swift            # 原生 GitHub Releases 检查更新引擎
     ├── AppManager.swift               # 目录扫描、隔离隐藏与原路恢复引擎
     ├── Views.swift                    # SwiftUI Soft 质感界面 (状态栏浮窗、分段器、搜索与卡片)
     └── main.swift                     # 应用程序主入口 (MenuBarExtra)
