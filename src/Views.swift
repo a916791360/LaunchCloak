@@ -130,12 +130,6 @@ public struct MainContentView: View {
                     Label("在访达中打开隐藏目录", systemImage: "folder")
                 }
                 
-                Button {
-                    manager.refresh(showLoading: true)
-                } label: {
-                    Label("刷新应用列表", systemImage: "arrow.clockwise")
-                }
-                
                 if !manager.hiddenApps.isEmpty {
                     Divider()
                     Button(role: .destructive) {
