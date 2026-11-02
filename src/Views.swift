@@ -15,6 +15,7 @@ public struct MainContentView: View {
     @State private var searchText: String = ""
     @State private var hoveredAppId: String? = nil
     @State private var pendingActionAppId: String? = nil
+    @State private var isRefreshHovered: Bool = false
     
     public init(manager: AppManager) {
         self.manager = manager
@@ -72,6 +73,34 @@ public struct MainContentView: View {
             }
             
             Spacer()
+            
+            // 刷新应用列表按钮
+            Button {
+                guard !manager.isLoading else { return }
+                manager.refresh(showLoading: true)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("刷新")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(isRefreshHovered ? Color.primary.opacity(0.1) : Color.primary.opacity(0.05))
+                .foregroundStyle(isRefreshHovered ? Color.primary : Color.secondary)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .disabled(manager.isLoading)
+            .opacity(manager.isLoading ? 0.6 : 1.0)
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isRefreshHovered = hovering
+                }
+            }
+            .help("重新扫描本地应用 (⌘R)")
+            .keyboardShortcut("r", modifiers: .command)
             
             // 右上角 "···" 更多菜单
             Menu {

@@ -74,14 +74,18 @@ public final class AppManager: ObservableObject {
                 var installed: [AppItem] = []
                 let searchDirs = [
                     URL(fileURLWithPath: "/Applications"),
+                    URL(fileURLWithPath: "/Applications/Utilities"),
                     fm.homeDirectoryForCurrentUser.appendingPathComponent("Applications", isDirectory: true)
                 ]
                 
+                var seenPaths = Set<String>()
                 for dir in searchDirs {
                     guard let contents = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else { continue }
                     for url in contents where url.pathExtension == "app" {
                         if url.lastPathComponent.contains("LaunchCloak") { continue }
-                        installed.append(AppItem(url: url, isHidden: false))
+                        if seenPaths.insert(url.path).inserted {
+                            installed.append(AppItem(url: url, isHidden: false))
+                        }
                     }
                 }
                 
